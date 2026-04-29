@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 from bs4 import BeautifulSoup
 from datetime import datetime
 from typing import Optional
@@ -7,20 +8,28 @@ import requests
 import urllib.parse
 import re
 from config import settings
+from utils.db_connection import get_db
+from models.black_list import BlackListRestaurant
 
 router = APIRouter()
 
 class LunchOption(BaseModel):
     restaurant: str
     purchase_link: str
+    banned: bool
+    blacklist_id: Optional[int] = None
 
 class LunchResponse(BaseModel):
     options: list[LunchOption]
 
 @router.get("/api/v1/lunch", response_model=LunchResponse)
-def get_lunch_data(date: Optional[str] = None):
+def get_lunch_data(date: Optional[str] = None, db: Session = Depends(get_db)):
     if not settings.PHPSESSID or settings.PHPSESSID == "請填寫您的_PHPSESSID":
         raise HTTPException(status_code=400, detail="請先在 backend/config/settings.py 中設定 PHPSESSID")
+
+    # 取得黑名單
+    banned_records = db.query(BlackListRestaurant).all()
+    banned_restaurants = {record.name: record.id for record in banned_records}
 
     base_url = "https://welfare.ieiworld.com"
     # 保留您之前加入的各種 Cookie，以防萬一
@@ -116,7 +125,14 @@ def get_lunch_data(date: Optional[str] = None):
                                     if match:
                                         purchase_link = urllib.parse.urljoin(base_lunch_dir, match.group(1))
                                     
-                    options_list.append({"restaurant": text, "purchase_link": purchase_link})
+                    is_banned = text in banned_restaurants
+                    b_id = banned_restaurants.get(text) if is_banned else None
+                    options_list.append({
+                        "restaurant": text, 
+                        "purchase_link": purchase_link, 
+                        "banned": is_banned,
+                        "blacklist_id": b_id
+                    })
                     
         print("找到的餐廳選項：", options_list)
 

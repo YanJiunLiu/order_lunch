@@ -29,10 +29,10 @@ def update_cookie(req: CookieUpdateRequest):
         }
         res = requests.get(test_url, cookies={'PHPSESSID': new_sessid}, headers=headers, timeout=10)
 
-        if not res.text:
-            raise HTTPException(status_code=401, detail="驗證失敗：此 Cookie 無效或已過期")
-        
-        if "location.replace" in res.text and "login.microsoftonline.com" in res.text:
+        text = res.text
+        if (not text or 
+            ("location.replace" in text and "https://welfare.ieiworld.com/usering/" in text) or 
+            ("location.replace" in text and "login.microsoftonline.com" in text)):
             raise HTTPException(status_code=401, detail="驗證失敗：此 Cookie 無效或已過期")
     except requests.RequestException:
         raise HTTPException(status_code=500, detail="無法連線至福利網進行驗證")

@@ -75,3 +75,33 @@ npm run dev
 ```
 
 前端成功啟動後，會顯示運行在 `http://localhost:5173`。請用瀏覽器開啟該網址，即可看見午餐查詢介面。
+
+---
+
+## 資料庫與黑名單功能 (SQLite + Alembic)
+
+專案包含一個基於 SQLite 的資料庫，用來儲存黑名單餐廳。
+我們使用 SQLAlchemy 作為 ORM，並且使用 Alembic 作為 Migration 工具。
+
+### 在 Docker 中的資料庫行為
+如果您使用 `docker-compose up -d --build` 啟動，`docker-compose.yaml` 已經設定了以下機制：
+1. **持久化儲存**：透過 `volumes: - ./backend:/app`，Docker 內部產生的 `lunch.db` 資料庫檔案會自動同步到您本機的 `backend` 目錄下，確保重啟不會遺失資料。
+2. **自動 Migration**：後端容器啟動前，會自動執行 `alembic upgrade head`，幫您建立/更新資料表結構，然後才啟動 FastAPI 伺服器。
+
+### 手動建立與更新資料庫 (Local Development)
+如果您是「手動」在本地環境開發，請確保您在啟動 `uvicorn` 之前，先執行過資料庫遷移指令來建立 `lunch.db`：
+
+```bash
+cd backend
+
+# 安裝資料庫相關套件
+uv sync
+
+# 執行升級指令，正式建立 SQLite 資料庫檔案與資料表
+uv run alembic upgrade head
+```
+
+如果有更動 `models/` 目錄底下的資料表結構，請透過以下指令產生新的遷移腳本：
+```bash
+uv run alembic revision --autogenerate -m "您的變更說明"
+```

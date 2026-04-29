@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Utensils, Loader2, Store, ExternalLink, LogIn, KeyRound } from 'lucide-react';
+import { Utensils, Loader2, Store, ExternalLink, LogIn, KeyRound, Ban } from 'lucide-react';
 import './index.css';
 
 interface LunchOption {
   restaurant: string;
   purchase_link: string;
+  banned: boolean;
 }
 
 function App() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Step 2 State
   const [phpsessidInput, setPhpsessidInput] = useState('');
   const [updateMsg, setUpdateMsg] = useState('');
@@ -29,7 +30,6 @@ function App() {
       const data = response.data;
       if (data.redirect_url) {
         window.open(data.redirect_url, '_blank');
-        setStep(2);
       } else {
         setError('無法取得登入網址。');
       }
@@ -66,12 +66,37 @@ function App() {
     setTimeout(() => setIsShake(false), 500); // 搖晃動畫時間
   };
 
+  const handleAddToBlacklist = async (restaurantName: string) => {
+    try {
+      await axios.post('http://localhost:8000/api/v1/black_list', { name: restaurantName });
+      alert(`已將「${restaurantName}」加入黑名單！`);
+      fetchLunch(); // 新增成功後自動重新整理清單
+    } catch (err: any) {
+      if (err.response?.status === 400) {
+        alert(`「${restaurantName}」已經在黑名單中了！`);
+      } else {
+        alert('新增到黑名單失敗，請稍後再試。');
+      }
+    }
+  };
+
+  const handleRemoveFromBlacklist = async (id: number, restaurantName: string) => {
+    try {
+      await axios.delete(`http://localhost:8000/api/v1/black_list/${id}`);
+      alert(`已將「${restaurantName}」解除隱藏！`);
+      fetchLunch(); // 刪除成功後自動重新整理清單
+    } catch (err) {
+      alert('解除隱藏失敗，請稍後再試。');
+    }
+  };
+
   const fetchLunch = async () => {
     setLoading(true);
     setError(null);
     setOptions([]);
     try {
-      const response = await axios.get('http://localhost:8000/api/v1/lunch');
+      const timestamp = new Date().getTime();
+      const response = await axios.get(`http://localhost:8000/api/v1/lunch?_t=${timestamp}`);
       const data = response.data;
       if (data.options && data.options.length > 0) {
         setOptions(data.options);
@@ -80,13 +105,8 @@ function App() {
       }
     } catch (err: any) {
       console.error('Fetch error:', err);
-      // 如果在這裡發現 401，代表 session 失效，退回 step 2
-      if (err.response?.status === 401) {
-        setStep(2);
-        triggerShake('Session 已失效，請重新取得 Cookie');
-      } else {
-        setError(err.response?.data?.detail || '連線至伺服器時發生錯誤。');
-      }
+      setStep(1);
+      triggerShake('登入失敗，請確認您的 PHPSESSID 是否正確或已過期');
     } finally {
       setLoading(false);
     }
@@ -109,29 +129,27 @@ function App() {
 
         {step === 1 && (
           <div className="step-container fade-in">
-            <p className="subtitle">請先登入微軟帳號，取得福利網存取權限</p>
-            <button 
+            <p className="subtitle">取得福利網存取權限</p>
+            
+            <button
               className="action-btn"
-              onClick={handleLogin} 
+              onClick={handleLogin}
               disabled={loading}
             >
               {loading ? <Loader2 className="spinner" size={20} /> : <LogIn size={20} />}
-              前往登入
+              1. 點此開新分頁登入微軟帳號
             </button>
-            {error && <div className="error-message">{error}</div>}
-          </div>
-        )}
 
-        {step === 2 && (
-          <div className="step-container fade-in">
-            <p className="subtitle">請按 F12 從 Application 複製 PHPSESSID 貼到下方</p>
+            <div className="divider"><span>或是您已經有 Cookie</span></div>
+
+            <p className="subtitle" style={{marginTop: '0.5rem', marginBottom: '0.5rem'}}>2. 貼上 PHPSESSID (按 F12 從 Application 複製)</p>
             <div className="cookie-input-section">
               <div className="cookie-input-group">
                 <KeyRound size={20} className="input-icon" />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   className={isShake ? 'error-shake' : ''}
-                  placeholder="輸入 PHPSESSID..." 
+                  placeholder="輸入 PHPSESSID..."
                   value={phpsessidInput}
                   onChange={(e) => setPhpsessidInput(e.target.value)}
                   disabled={loading}
@@ -142,29 +160,23 @@ function App() {
                   }}
                 />
               </div>
-              <button 
-                className="action-btn" 
+              <button
+                className="action-btn"
                 onClick={handleVerifyCookie}
                 disabled={loading}
               >
                 {loading ? <Loader2 className="spinner" size={20} /> : '驗證並進入系統'}
               </button>
             </div>
+            {error && <div className="error-message">{error}</div>}
             {updateMsg && <div className={`update-msg ${isShake ? 'error-text' : ''}`}>{updateMsg}</div>}
           </div>
         )}
 
         {step === 3 && options.length === 0 && !error && (
           <div className="step-container fade-in">
-             <p className="subtitle">正在為您準備美味的午餐清單...</p>
-             {loading && <Loader2 className="spinner large-spinner" size={40} />}
-          </div>
-        )}
-        
-        {step === 3 && error && (
-          <div className="step-container fade-in">
-            <div className="error-message">{error}</div>
-            <button className="action-btn" onClick={fetchLunch}>重試</button>
+            <p className="subtitle">正在為您準備美味的午餐清單...</p>
+            {loading && <Loader2 className="spinner large-spinner" size={40} />}
           </div>
         )}
       </div>
@@ -175,23 +187,51 @@ function App() {
             <Store size={28} className="store-icon" />
             <h2>今日可選餐廳 ({options.length})</h2>
           </div>
-          
+
           <div className="options-grid">
             {options.map((opt, i) => (
-              <div key={i} className="option-card">
-                <h3>{opt.restaurant}</h3>
+              <div key={i} className={`option-card ${opt.banned ? 'banned-card' : ''}`}>
+                <div className="option-header">
+                  <h3>{opt.restaurant}</h3>
+                  {!opt.banned ? (
+                    <button
+                      className="blacklist-btn"
+                      title="新增至黑名單"
+                      onClick={() => handleAddToBlacklist(opt.restaurant)}
+                    >
+                      <Ban size={16} />
+                    </button>
+                  ) : (
+                    <div className="banned-actions">
+                      <span className="banned-badge">已隱藏</span>
+                      <button 
+                        className="unban-btn" 
+                        title="解除隱藏"
+                        onClick={() => {
+                          if (opt.blacklist_id != null) {
+                            handleRemoveFromBlacklist(opt.blacklist_id, opt.restaurant);
+                          } else {
+                            alert("系統錯誤：找不到該黑名單的 ID");
+                          }
+                        }}
+                      >
+                        解除隱藏
+                      </button>
+                    </div>
+                  )}
+                </div>
                 {opt.purchase_link ? (
-                  <a 
-                    href={opt.purchase_link} 
-                    target="_blank" 
+                  <a
+                    href={opt.purchase_link}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="purchase-btn"
                   >
                     開始訂 <ExternalLink size={16} />
                   </a>
                 ) : (
-                  <button 
-                    className="purchase-btn disabled" 
+                  <button
+                    className="purchase-btn disabled"
                     disabled
                   >
                     開始訂 (尚未開放)

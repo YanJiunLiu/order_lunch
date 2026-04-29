@@ -153,15 +153,19 @@ button:disabled {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-10px);
   }
@@ -235,11 +239,77 @@ button:disabled {
   box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.15), 0 4px 6px -4px rgba(249, 115, 22, 0.1);
 }
 
-.option-card h3 {
+.option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+.option-header h3 {
   margin: 0;
-  font-size: 1.2rem;
+  border-bottom: none;
+  padding-bottom: 0;
   color: #1e293b;
-  line-height: 1.4;
+  font-size: 1.25rem;
+}
+
+.blacklist-btn {
+  background: transparent;
+  color: #94a3b8;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.blacklist-btn:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.banned-card {
+  opacity: 0.6;
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.banned-badge {
+  background-color: #ef4444;
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.banned-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.unban-btn {
+  background-color: #e2e8f0;
+  color: #475569;
+  border: none;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.unban-btn:hover {
+  background-color: #cbd5e1;
+  color: #1e293b;
 }
 
 .purchase-btn {
@@ -345,6 +415,28 @@ button:disabled {
   font-size: 1rem;
   color: #334155;
   width: 100%;
+  font-weight: 500;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+  color: #94a3b8;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.divider span {
+  padding: 0 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .update-msg {
@@ -360,10 +452,23 @@ button:disabled {
 
 /* Shake Animation */
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-10px); }
-  50% { transform: translateX(10px); }
-  75% { transform: translateX(-10px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-10px);
+  }
+
+  50% {
+    transform: translateX(10px);
+  }
+
+  75% {
+    transform: translateX(-10px);
+  }
 }
 
 .error-shake {
@@ -386,11 +491,25 @@ button:disabled {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fadeInSlide {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
