@@ -550,3 +550,24 @@ button:disabled {
     transform: translateY(0);
   }
 }
+
+.password-toggle-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 0.5rem;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+  flex-shrink: 0;
+  width: auto;
+  height: auto;
+}
+
+.password-toggle-btn:hover {
+  color: #475569;
+  background: none;
+}

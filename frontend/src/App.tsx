@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Utensils, Loader2, Store, ExternalLink, LogIn, KeyRound, Ban } from 'lucide-react';
+import { Utensils, Loader2, Store, ExternalLink, LogIn, KeyRound, Ban, Eye, EyeOff } from 'lucide-react';
 import './index.css';
 
 interface LunchOption {
@@ -26,6 +26,7 @@ function App() {
   const [phpsessidInput, setPhpsessidInput] = useState('7ubkmimgklgsitbhqpt35931ht');
   const [updateMsg, setUpdateMsg] = useState('');
   const [isShake, setIsShake] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Step 3 State
   const [options, setOptions] = useState<LunchOption[]>([]);
@@ -34,7 +35,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('http://localhost:8000/api/v1/login');
+      const response = await axios.get('/api/v1/login');
       const data = response.data;
       if (data.redirect_url) {
         window.open(data.redirect_url, '_blank');
@@ -58,7 +59,7 @@ function App() {
     setUpdateMsg('驗證中...');
     setIsShake(false);
     try {
-      await axios.post('http://localhost:8000/api/v1/cookie', { phpsessid: phpsessidInput.trim() });
+      await axios.post('/api/v1/cookie', { phpsessid: phpsessidInput.trim() });
       setUpdateMsg('✅ 驗證成功！');
       setStep(3);
     } catch (err: any) {
@@ -76,7 +77,7 @@ function App() {
 
   const handleAddToBlacklist = async (restaurantName: string) => {
     try {
-      await axios.post('http://localhost:8000/api/v1/black_list', { name: restaurantName });
+      await axios.post('/api/v1/black_list', { name: restaurantName });
       alert(`已將「${restaurantName}」加入黑名單！`);
       fetchLunch(); // 新增成功後自動重新整理清單
     } catch (err: any) {
@@ -90,7 +91,7 @@ function App() {
 
   const handleRemoveFromBlacklist = async (id: number, restaurantName: string) => {
     try {
-      await axios.delete(`http://localhost:8000/api/v1/black_list/${id}`);
+      await axios.delete(`/api/v1/black_list/${id}`);
       alert(`已將「${restaurantName}」解除隱藏！`);
       fetchLunch(); // 刪除成功後自動重新整理清單
     } catch (err) {
@@ -108,7 +109,7 @@ function App() {
     
     try {
       const timestamp = new Date().getTime();
-      const response = await axios.get(`http://localhost:8000/api/v1/lunch?date=${formattedForApi}&_t=${timestamp}`);
+      const response = await axios.get(`/api/v1/lunch?date=${formattedForApi}&_t=${timestamp}`);
       const data = response.data;
       if (data.options && data.options.length > 0) {
         setOptions(data.options);
@@ -175,7 +176,7 @@ function App() {
               <div className="cookie-input-group">
                 <KeyRound size={20} className="input-icon" />
                 <input
-                  type="text"
+                  type={showPassword ? 'text' : 'password'}
                   className={isShake ? 'error-shake' : ''}
                   placeholder="輸入 PHPSESSID..."
                   value={phpsessidInput}
@@ -187,6 +188,14 @@ function App() {
                     }
                   }}
                 />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  title={showPassword ? "隱藏密碼" : "顯示密碼"}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
               <button
                 className="action-btn"
