@@ -14,8 +14,16 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Date State
+  const [selectedDate, setSelectedDate] = useState(() => {
+    // 取得台灣時間的 YYYY-MM-DD
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().split('T')[0];
+  });
+
   // Step 2 State
-  const [phpsessidInput, setPhpsessidInput] = useState('');
+  const [phpsessidInput, setPhpsessidInput] = useState('7ubkmimgklgsitbhqpt35931ht');
   const [updateMsg, setUpdateMsg] = useState('');
   const [isShake, setIsShake] = useState(false);
 
@@ -90,13 +98,17 @@ function App() {
     }
   };
 
-  const fetchLunch = async () => {
+  const fetchLunch = async (dateStr?: string) => {
     setLoading(true);
     setError(null);
     setOptions([]);
+    
+    const targetDate = dateStr || selectedDate;
+    const formattedForApi = targetDate.replace(/-/g, ''); // 轉成 YYYYMMDD
+    
     try {
       const timestamp = new Date().getTime();
-      const response = await axios.get(`http://localhost:8000/api/v1/lunch?_t=${timestamp}`);
+      const response = await axios.get(`http://localhost:8000/api/v1/lunch?date=${formattedForApi}&_t=${timestamp}`);
       const data = response.data;
       if (data.options && data.options.length > 0) {
         setOptions(data.options);
@@ -123,8 +135,24 @@ function App() {
     <div className={`app-wrapper ${step === 3 && options.length > 0 ? 'has-content' : ''}`}>
       <div className="main-card fade-in">
         <Utensils className="logo-icon" size={64} />
-        <div className="header-text">
-          <h1>今日午餐</h1>
+        <div className="header-text" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+          <h1 style={{ margin: 0 }}>{selectedDate.replace(/-/g, '/')} 的午餐</h1>
+          {step === 3 && (
+            <input 
+              type="date" 
+              className="date-picker"
+              value={selectedDate}
+              onChange={(e) => {
+                const newDate = e.target.value;
+                if (newDate) {
+                  setSelectedDate(newDate);
+                  fetchLunch(newDate);
+                }
+              }}
+              disabled={loading}
+              title="選擇日期"
+            />
+          )}
         </div>
 
         {step === 1 && (
@@ -203,10 +231,10 @@ function App() {
                     </button>
                   ) : (
                     <div className="banned-actions">
-                      <span className="banned-badge">已隱藏</span>
+                      <span className="banned-badge">很難吃</span>
                       <button 
                         className="unban-btn" 
-                        title="解除隱藏"
+                        title="給他一次機會"
                         onClick={() => {
                           if (opt.blacklist_id != null) {
                             handleRemoveFromBlacklist(opt.blacklist_id, opt.restaurant);
@@ -215,7 +243,7 @@ function App() {
                           }
                         }}
                       >
-                        解除隱藏
+                        給他一次機會
                       </button>
                     </div>
                   )}

@@ -29,3 +29,16 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+
+  ngrok:
+    image: ngrok/ngrok:3
+    restart: unless-stopped
+    ports:
+      - "4040:4040"
+    environment:
+      # 如果您有 ngrok token，可以在環境變數或這裡設定
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN:-}
+    # 把前端的 5173 port 倒出去
+    command: http frontend:5173
+    depends_on:
+      - frontend
