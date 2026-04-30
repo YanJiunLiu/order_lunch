@@ -24,8 +24,9 @@ class LunchResponse(BaseModel):
 
 @router.get("/api/v1/lunch", response_model=LunchResponse)
 def get_lunch_data(date: Optional[str] = None, db: Session = Depends(get_db)):
-    if not settings.PHPSESSID or settings.PHPSESSID == "請填寫您的_PHPSESSID":
-        raise HTTPException(status_code=400, detail="請先在 backend/config/settings.py 中設定 PHPSESSID")
+    current_sessid = settings.get_phpsessid()
+    if not current_sessid or current_sessid == "請填寫您的_PHPSESSID":
+        raise HTTPException(status_code=400, detail="請先設定 PHPSESSID")
 
     # 取得黑名單
     banned_records = db.query(BlackListRestaurant).all()
@@ -34,7 +35,7 @@ def get_lunch_data(date: Optional[str] = None, db: Session = Depends(get_db)):
     base_url = "https://welfare.ieiworld.com"
     # 保留您之前加入的各種 Cookie，以防萬一
     cookies = {
-        'PHPSESSID': settings.PHPSESSID,
+        'PHPSESSID': current_sessid,
     }
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',

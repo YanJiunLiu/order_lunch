@@ -53,17 +53,22 @@ export function AuthPage({ onLoginSuccess }: AuthPageProps) {
 
   const handleVerifyCookie = async (sessionToVerify?: string) => {
     const session = typeof sessionToVerify === 'string' ? sessionToVerify : phpsessidInput.trim();
-    if (!session) {
-      triggerShake('請輸入 PHPSESSID');
-      return;
-    }
     setLoading(true);
     setUpdateMsg('驗證中...');
     setIsShake(false);
     try {
-      await axios.post('/api/v1/cookie', { phpsessid: session });
+      const response = await axios.post('/api/v1/cookie', { phpsessid: session });
+      const returnedSession = response.data.phpsessid;
       setUpdateMsg('✅ 驗證成功！');
-      localStorage.setItem('PHPSESSID', session);
+      
+      // 使用後端回傳的有效 cookie 進行存儲
+      localStorage.setItem('PHPSESSID', returnedSession);
+      
+      // 如果前端原本輸入的跟後端回傳的不同（代表使用到伺服器舊的有效 Cookie），就更新畫面
+      if (returnedSession !== phpsessidInput) {
+        setPhpsessidInput(returnedSession);
+      }
+      
       onLoginSuccess();
     } catch (err: any) {
       localStorage.removeItem('PHPSESSID');
@@ -84,7 +89,7 @@ export function AuthPage({ onLoginSuccess }: AuthPageProps) {
 
         <div className="step-container fade-in">
           <p className="subtitle">取得福利網存取權限</p>
-          
+
           <button
             className="action-btn"
             onClick={handleLogin}
@@ -96,7 +101,7 @@ export function AuthPage({ onLoginSuccess }: AuthPageProps) {
 
           <div className="divider"><span>或是您已經有 Cookie</span></div>
 
-          <p className="subtitle" style={{marginTop: '0.5rem', marginBottom: '0.5rem'}}>2. 貼上 PHPSESSID (按 F12 從 Application 複製)</p>
+          <p className="subtitle" style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>2. 貼上 PHPSESSID (按 F12 從 Application 複製)</p>
           <div className="cookie-input-section">
             <div className="cookie-input-group">
               <KeyRound size={20} className="input-icon" />
